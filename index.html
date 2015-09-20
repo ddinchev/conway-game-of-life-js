@@ -13,8 +13,8 @@
         var bufferCanvas = null;
         var bufferCanvasCtx = null;
         var cells = [];
-        var cellWidth = 7, cellSpace = 1.5;
-        var LIFE_TIME = 100; // milliseconds
+        var cellWidth = 5, cellSpace = 1;
+        var LIFE_TIME = 150; // milliseconds
         var STATE_DEAD = 0, STATE_ALIVE = 1;
 
         function init() {
@@ -43,29 +43,54 @@
             setInterval(animate, LIFE_TIME);
         }
 
+        function modelLLSS(cells, startX, startY) {
+            cells[startX+3][startY].setAlive();
+            cells[startX+1][startY].setAlive();
+            cells[startX+4][startY+1].setAlive();
+            cells[startX+4][startY+2].setAlive();
+            cells[startX+4][startY+3].setAlive();
+            cells[startX+3][startY+3].setAlive();
+            cells[startX+2][startY+3].setAlive();
+            cells[startX+1][startY+3].setAlive();
+            cells[startX][startY+2].setAlive();
+        }
+
+        function modelPulsar(cells, startX, startY) {
+            cells[startX][startY].setAlive();
+            cells[startX][startY+1].setAlive();
+            cells[startX][startY+2].setAlive();
+        }
+
+        function modelGlider(cells, startX, startY) {
+            cells[startX+2][startY].setAlive();
+            cells[startX][startY+1].setAlive();
+            cells[startX+2][startY+1].setAlive();
+            cells[startX+2][startY+2].setAlive();
+            cells[startX+1][startY+2].setAlive();
+        }
+
+        function modelCross(cells, startX, startY) {
+            cells[startX+1][startY].setAlive();
+            cells[startX+1][startY+1].setAlive();
+            cells[startX+1][startY+2].setAlive();
+            cells[startX][startY+1].setAlive();
+            cells[startX+2][startY+1].setAlive();
+        }
+
+        function modelRPentonimo(cells, startX, startY) {
+            cells[startX+1][startY].setAlive();
+            cells[startX+2][startY].setAlive();
+            cells[startX+1][startY+1].setAlive();
+            cells[startX+1][startY+2].setAlive();
+            cells[startX][startY+1].setAlive();
+        }
+
         function seedGame() {
-            // glider spaceship
-            cells[5][2].setAlive();
-            cells[5][3].setAlive();
-            cells[5][4].setAlive();
-            cells[4][4].setAlive();
-            cells[3][3].setAlive();
-
-            // pulsar
-            cells[75][4].setAlive();
-            cells[75][5].setAlive();
-            cells[75][6].setAlive();
-
-            // LLSS
-            cells[55][15].setAlive();
-            cells[55][16].setAlive();
-            cells[55][17].setAlive();
-            cells[54][17].setAlive();
-            cells[53][17].setAlive();
-            cells[52][17].setAlive();
-            cells[51][16].setAlive();
-            cells[54][14].setAlive();
-            cells[52][14].setAlive();
+            modelLLSS(cells, 50, 15);
+            modelPulsar(cells, 75, 10);
+            modelGlider(cells, 3, 2);
+            modelCross(cells, 100, 50);
+            modelRPentonimo(cells, 20, 50);
         }
 
         function animate() {
