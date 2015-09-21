@@ -7,6 +7,9 @@
         }
     </style>
 
+</head>
+<body onload="init()">
+<canvas id="canvasGame">Canvas Not Supported</canvas>
     <script type="text/javascript">
         var canvas = null;
         var context = null;
@@ -41,6 +44,9 @@
             seedGame();
             Draw();
             schedule(animate, LIFE_TIME);
+            canvas.addEventListener("mousedown", function() {
+                randomise(cells);
+            });
         }
 
         function schedule(animate, minUpdateInterval) {
@@ -55,6 +61,20 @@
                     window.requestAnimationFrame(draw);
                 }
                 window.requestAnimationFrame(draw);
+            }
+        }
+
+        function randomise(cells) {
+            for (var x = 0; x < cells.length; x++) {
+                for (var y = 0; y < cells[x].length; y++) {
+                    var cell = cells[x][y];
+                    if (Math.random() > 0.5) {
+                        cell.state = STATE_DEAD;
+                    }
+                    else {
+                        cell.state = STATE_ALIVE;
+                    }
+                }
             }
         }
 				    
@@ -205,8 +225,5 @@
             context.restore();
         }
     </script>
-</head>
-<body onload="init()">
-<canvas id="canvasGame">Canvas Not Supported</canvas>
 </body>
 </html>
