@@ -40,9 +40,30 @@
 
             seedGame();
             Draw();
-            setInterval(animate, LIFE_TIME);
+            schedule(animate, LIFE_TIME);
         }
 
+        function schedule(animate, minUpdateInterval) {
+            if (!window.requestAnimationFrame) {
+                console.log("Falling back to setInterval");
+                setInterval(animate, minUpdateInterval);
+            }
+            else {
+                console.log("Using requestAnimationFrame");
+                var lastRedraw = -1 * minUpdateInterval;
+                var currTime = -1;
+                function draw() {
+                    currTime = new Date().getTime();
+                    if (currTime - lastRedraw >= minUpdateInterval) {
+                        lastRedraw = currTime;
+                        animate();
+                    }
+                    window.requestAnimationFrame(draw);
+                }
+                window.requestAnimationFrame(draw);
+            }
+        }
+				    
         function modelLLSS(cells, startX, startY) {
             cells[startX+3][startY].setAlive();
             cells[startX+1][startY].setAlive();
