@@ -49,15 +49,9 @@
                 setInterval(animate, minUpdateInterval);
             }
             else {
-                console.log("Using requestAnimationFrame");
-                var lastRedraw = -1 * minUpdateInterval;
-                var currTime = -1;
+                console.log("Using requestAnimationFrame to go as fast as allowed");
                 function draw() {
-                    currTime = new Date().getTime();
-                    if (currTime - lastRedraw >= minUpdateInterval) {
-                        lastRedraw = currTime;
-                        animate();
-                    }
+                    animate();
                     window.requestAnimationFrame(draw);
                 }
                 window.requestAnimationFrame(draw);
