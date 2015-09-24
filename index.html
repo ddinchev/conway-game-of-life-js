@@ -10,220 +10,237 @@
 </head>
 <body onload="init()">
 <canvas id="canvasGame">Canvas Not Supported</canvas>
-    <script type="text/javascript">
-        var canvas = null;
-        var context = null;
-        var bufferCanvas = null;
-        var bufferCanvasCtx = null;
-        var cells = [];
-        var cellWidth = 5, cellSpace = 1;
-        var LIFE_TIME = 150; // milliseconds
-        var STATE_DEAD = 0, STATE_ALIVE = 1;
+<script type="text/javascript">
+    var canvas = null;
+    var context = null;
+    var bufferCanvas = null;
+    var bufferCanvasCtx = null;
+    var cells = [];
+    var cellWidth = 5, cellSpace = 1.5;
+    var LIFE_TIME = 75; // milliseconds, could take more but won't take less
+    var STATE_DEAD = 0, STATE_ALIVE = 1;
 
-        function init() {
-            canvas = document.getElementById('canvasGame');
-            context = canvas.getContext("2d");
+    function init() {
+        canvas = document.getElementById('canvasGame');
+        context = canvas.getContext("2d");
 
-            bufferCanvas = document.createElement("canvas");
-            bufferCanvas.width = canvas.width = window.innerWidth;
-            bufferCanvas.height = canvas.height = window.innerHeight;
-            bufferCanvasCtx = bufferCanvas.getContext("2d");
+        bufferCanvas = document.createElement("canvas");
+        bufferCanvas.width = canvas.width = window.innerWidth;
+        bufferCanvas.height = canvas.height = window.innerHeight;
+        bufferCanvasCtx = bufferCanvas.getContext("2d");
 
-            var cellsWidth = parseInt(bufferCanvas.width / (cellWidth + cellSpace));
-            var cellsHeight = parseInt(bufferCanvas.height / (cellWidth + cellSpace));
+        var cellsWidth = parseInt(bufferCanvas.width / (cellWidth + cellSpace));
+        var cellsHeight = parseInt(bufferCanvas.height / (cellWidth + cellSpace));
 
-            // init Life field with dead cells
-            cells = new Array(cellsWidth);
-            for (var x = 0; x < cellsWidth; x++) {
-                cells[x] = new Array(cellsHeight);
-                for (var y = 0; y < cellsHeight; y++) {
-                    cells[x][y] = new Cell(x, y);
+        // init Life field with dead cells
+        cells = new Array(cellsWidth);
+        for (var x = 0; x < cellsWidth; x++) {
+            cells[x] = new Array(cellsHeight);
+            for (var y = 0; y < cellsHeight; y++) {
+                cells[x][y] = new Cell(x, y);
+            }
+        }
+
+        seedGame();
+        Draw();
+        schedule(Frame, LIFE_TIME);
+
+        canvas.addEventListener("click", function () {
+            randomise(cells);
+        });
+    }
+
+    function schedule(frame, minUpdateInterval) {
+        var now;
+        var then = Date.now();
+        var delta;
+
+        function draw() {
+            window.requestAnimationFrame(draw);
+            now = Date.now();
+            delta = now - then;
+
+            if (delta > minUpdateInterval) {
+                // Update time stuffs
+                // Just `then = now` is not enough.
+                // Lets say we set fps at 10 which means
+                // each frame must take 100ms
+                // Now frame executes in 16ms (60fps) so
+                // the loop iterates 7 times (16*7 = 112ms) until
+                // delta > interval === true
+                // Eventually this lowers down the FPS as
+                // 112*10 = 1120ms (NOT 1000ms).
+                // So we have to get rid of that extra 12ms
+                // by subtracting delta (112) % interval (100).
+                // Hope that makes sense.
+
+                then = now - (delta % minUpdateInterval);
+                frame();
+            }
+        }
+        draw();
+    }
+
+    function randomise(cells) {
+        for (var x = 0; x < cells.length; x++) {
+            for (var y = 0; y < cells[x].length; y++) {
+                var cell = cells[x][y];
+                if (Math.random() > 0.5) {
+                    cell.state = STATE_DEAD;
                 }
-            }
-
-            seedGame();
-            Draw();
-            schedule(animate, LIFE_TIME);
-            canvas.addEventListener("mousedown", function() {
-                randomise(cells);
-            });
-        }
-
-        function schedule(animate, minUpdateInterval) {
-            if (!window.requestAnimationFrame) {
-                console.log("Falling back to setInterval");
-                setInterval(animate, minUpdateInterval);
-            }
-            else {
-                console.log("Using requestAnimationFrame to go as fast as allowed");
-                function draw() {
-                    animate();
-                    window.requestAnimationFrame(draw);
-                }
-                window.requestAnimationFrame(draw);
-            }
-        }
-
-        function randomise(cells) {
-            for (var x = 0; x < cells.length; x++) {
-                for (var y = 0; y < cells[x].length; y++) {
-                    var cell = cells[x][y];
-                    if (Math.random() > 0.5) {
-                        cell.state = STATE_DEAD;
-                    }
-                    else {
-                        cell.state = STATE_ALIVE;
-                    }
-                }
-            }
-        }
-				    
-        function modelLLSS(cells, startX, startY) {
-            cells[startX+3][startY].setAlive();
-            cells[startX+1][startY].setAlive();
-            cells[startX+4][startY+1].setAlive();
-            cells[startX+4][startY+2].setAlive();
-            cells[startX+4][startY+3].setAlive();
-            cells[startX+3][startY+3].setAlive();
-            cells[startX+2][startY+3].setAlive();
-            cells[startX+1][startY+3].setAlive();
-            cells[startX][startY+2].setAlive();
-        }
-
-        function modelPulsar(cells, startX, startY) {
-            cells[startX][startY].setAlive();
-            cells[startX][startY+1].setAlive();
-            cells[startX][startY+2].setAlive();
-        }
-
-        function modelGlider(cells, startX, startY) {
-            cells[startX+2][startY].setAlive();
-            cells[startX][startY+1].setAlive();
-            cells[startX+2][startY+1].setAlive();
-            cells[startX+2][startY+2].setAlive();
-            cells[startX+1][startY+2].setAlive();
-        }
-
-        function modelCross(cells, startX, startY) {
-            cells[startX+1][startY].setAlive();
-            cells[startX+1][startY+1].setAlive();
-            cells[startX+1][startY+2].setAlive();
-            cells[startX][startY+1].setAlive();
-            cells[startX+2][startY+1].setAlive();
-        }
-
-        function modelRPentonimo(cells, startX, startY) {
-            cells[startX+1][startY].setAlive();
-            cells[startX+2][startY].setAlive();
-            cells[startX+1][startY+1].setAlive();
-            cells[startX+1][startY+2].setAlive();
-            cells[startX][startY+1].setAlive();
-        }
-
-        function seedGame() {
-            modelLLSS(cells, 50, 15);
-            modelPulsar(cells, 75, 10);
-            modelGlider(cells, 3, 2);
-            modelCross(cells, 100, 50);
-            modelRPentonimo(cells, 20, 50);
-        }
-
-        function animate() {
-            Update();
-            Draw();
-        }
-
-        function blank() {
-            bufferCanvasCtx.fillStyle = "white";
-            bufferCanvasCtx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-
-        function Update() {
-            for (var x = 0; x < cells.length; x++) {
-                for (var y = 0; y < cells[x].length; y++) {
-                    var cell = cells[x][y];
-                    var aliveNeighbours = cell.getAliveNeighbours();
-                    if (aliveNeighbours < 2) {
-                        cell.newState = STATE_DEAD;
-                    }
-                    if (aliveNeighbours > 3) {
-                        cell.newState = STATE_DEAD;
-                    }
-                    if (cell.state == STATE_DEAD && aliveNeighbours == 3) {
-                        cell.newState = STATE_ALIVE;
-                    }
+                else {
+                    cell.state = STATE_ALIVE;
                 }
             }
         }
+    }
 
-        function Cell(x, y) {
-            this.x = x;
-            this.y = y;
-            this.state = STATE_DEAD;
-            this.newState = null;
-        }
+    function modelLLSS(cells, startX, startY) {
+        cells[startX + 3][startY].setAlive();
+        cells[startX + 1][startY].setAlive();
+        cells[startX + 4][startY + 1].setAlive();
+        cells[startX + 4][startY + 2].setAlive();
+        cells[startX + 4][startY + 3].setAlive();
+        cells[startX + 3][startY + 3].setAlive();
+        cells[startX + 2][startY + 3].setAlive();
+        cells[startX + 1][startY + 3].setAlive();
+        cells[startX][startY + 2].setAlive();
+    }
 
-        Cell.prototype.getAliveNeighbours = function () {
-            var count = 0, tx, ty;
-            // check the 8 cells orbiting our current cell
-            for (var x = -1; x <= 1; x++) {
-                for (var y = -1; y <= 1; y++) {
-                    if (x == 0 && y == 0) {
-                        continue;
-                    }
-                    tx = (cells.length + this.x + x) % cells.length;
-                    ty = (cells[tx].length + this.y + y) % cells[tx].length;
-                    if (cells[tx][ty].state != STATE_DEAD) {
-                        count++;
-                    }
+    function modelPulsar(cells, startX, startY) {
+        cells[startX][startY].setAlive();
+        cells[startX][startY + 1].setAlive();
+        cells[startX][startY + 2].setAlive();
+    }
+
+    function modelGlider(cells, startX, startY) {
+        cells[startX + 2][startY].setAlive();
+        cells[startX][startY + 1].setAlive();
+        cells[startX + 2][startY + 1].setAlive();
+        cells[startX + 2][startY + 2].setAlive();
+        cells[startX + 1][startY + 2].setAlive();
+    }
+
+    function modelCross(cells, startX, startY) {
+        cells[startX + 1][startY].setAlive();
+        cells[startX + 1][startY + 1].setAlive();
+        cells[startX + 1][startY + 2].setAlive();
+        cells[startX][startY + 1].setAlive();
+        cells[startX + 2][startY + 1].setAlive();
+    }
+
+    function modelRPentonimo(cells, startX, startY) {
+        cells[startX + 1][startY].setAlive();
+        cells[startX + 2][startY].setAlive();
+        cells[startX + 1][startY + 1].setAlive();
+        cells[startX + 1][startY + 2].setAlive();
+        cells[startX][startY + 1].setAlive();
+    }
+
+    function seedGame() {
+        modelLLSS(cells, 50, 15);
+        modelPulsar(cells, 75, 10);
+        modelGlider(cells, 3, 2);
+        modelCross(cells, 100, 50);
+        modelRPentonimo(cells, 20, 50);
+    }
+
+    function blank() {
+        bufferCanvasCtx.fillStyle = "white";
+        bufferCanvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function Frame() {
+        Update();
+        Draw();
+    }
+
+    function Update() {
+        for (var x = 0; x < cells.length; x++) {
+            for (var y = 0; y < cells[x].length; y++) {
+                var cell = cells[x][y];
+                var aliveNeighbours = cell.getAliveNeighbours();
+                if (aliveNeighbours < 2) {
+                    cell.newState = STATE_DEAD;
+                }
+                if (aliveNeighbours > 3) {
+                    cell.newState = STATE_DEAD;
+                }
+                if (cell.state == STATE_DEAD && aliveNeighbours == 3) {
+                    cell.newState = STATE_ALIVE;
                 }
             }
+        }
+    }
 
-            return count;
-        };
+    function Cell(x, y) {
+        this.x = x;
+        this.y = y;
+        this.state = STATE_DEAD;
+        this.newState = null;
+    }
 
-        Cell.prototype.setAlive = function() {
-            this.state = STATE_ALIVE;
-        };
-
-        Cell.prototype.isDead = function() {
-            return this.state == STATE_DEAD;
-        };
-
-        function DrawCell(cell) {
-            var cellX = cell.x * (cellWidth + cellSpace);
-            var cellY = cell.y * (cellWidth + cellSpace);
-            var color = "#FFF";
-
-            if (cell.newState !== null) {
-                cell.state = cell.newState;
-                cell.newState = null;
-                if (cell.state == STATE_ALIVE) {
-                    color = "green";
+    Cell.prototype.getAliveNeighbours = function () {
+        var count = 0, tx, ty;
+        // check the 8 cells orbiting our current cell
+        for (var x = -1; x <= 1; x++) {
+            for (var y = -1; y <= 1; y++) {
+                if (x == 0 && y == 0) {
+                    continue;
+                }
+                tx = (cells.length + this.x + x) % cells.length;
+                ty = (cells[tx].length + this.y + y) % cells[tx].length;
+                if (cells[tx][ty].state != STATE_DEAD) {
+                    count++;
                 }
             }
-
-            if (color !== "green") {
-                color = cell.isDead() ? "#CCC" : "black";
-            }
-
-            bufferCanvasCtx.fillStyle = color;
-            bufferCanvasCtx.fillRect(cellX, cellY, cellWidth, cellWidth);
         }
 
-        function Draw() {
-            context.save();
-            blank();
+        return count;
+    };
 
-            for (var x = 0; x < cells.length; x++) {
-                for (var y = 0; y < cells[x].length; y++) {
-                    DrawCell(cells[x][y]);
-                }
+    Cell.prototype.setAlive = function () {
+        this.state = STATE_ALIVE;
+    };
+
+    Cell.prototype.isDead = function () {
+        return this.state == STATE_DEAD;
+    };
+
+    function DrawCell(cell) {
+        var cellX = cell.x * (cellWidth + cellSpace);
+        var cellY = cell.y * (cellWidth + cellSpace);
+        var color = "#FFF";
+
+        if (cell.newState !== null) {
+            cell.state = cell.newState;
+            cell.newState = null;
+            if (cell.state == STATE_ALIVE) {
+                color = "green";
             }
-
-            context.drawImage(bufferCanvas, 0, 0, bufferCanvas.width, bufferCanvas.height);
-            context.restore();
         }
-    </script>
+
+        if (color !== "green") {
+            color = cell.isDead() ? "#CCC" : "black";
+        }
+
+        bufferCanvasCtx.fillStyle = color;
+        bufferCanvasCtx.fillRect(cellX, cellY, cellWidth, cellWidth);
+    }
+
+    function Draw() {
+        context.save();
+        blank();
+
+        for (var x = 0; x < cells.length; x++) {
+            for (var y = 0; y < cells[x].length; y++) {
+                DrawCell(cells[x][y]);
+            }
+        }
+
+        context.drawImage(bufferCanvas, 0, 0, bufferCanvas.width, bufferCanvas.height);
+        context.restore();
+    }
+</script>
 </body>
 </html>
